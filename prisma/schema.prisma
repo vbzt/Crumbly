@@ -8,26 +8,43 @@ datasource db {
 }
 
 model employees {
-  id    Int     @id @default(autoincrement())
-  name  String  @db.VarChar(65)
-  phone String  @db.VarChar(45)
-  email String  @db.VarChar(45)
-  role  String? @db.VarChar(45)
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(65)
+  phone    String  @db.VarChar(45)
+  email    String  @db.VarChar(45)
+  role     String @db.VarChar(45) 
+  password String 
+
+  sales sales[] 
 }
 
 model sales {
   id          Int     @id @default(autoincrement())
   employee_id Int
-  product_id  Int
-  items_sold  Json
-  total_price Decimal @db.Decimal(10, 0)
+  total_price Decimal @db.Decimal(10, 2)
   total_items Int
+
+  employee employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  saleItems sale_items[]
+}
+
+model sale_items {
+  id         Int     @id @default(autoincrement())
+  sale_id    Int
+  product_id Int
+  quantity   Int
+  subtotal   Decimal @db.Decimal(10, 2)
+
+  sale    sales @relation(fields: [sale_id], references: [id], onDelete: Cascade)
+  product stock @relation(fields: [product_id], references: [id], onDelete: Cascade)
 }
 
 model stock {
   id       Int     @id @default(autoincrement())
   name     String  @db.VarChar(100)
-  price    Decimal @db.Decimal(10, 0)
+  price    Decimal @db.Decimal(10, 2)
   category String  @db.VarChar(65)
   amount   Int
+
+  sales sale_items[] 
 }
