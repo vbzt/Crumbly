@@ -46,7 +46,7 @@ model stock {
   name                String       @db.VarChar(100)
   price               Decimal      @db.Decimal(10, 2)
   category            String       @db.VarChar(65)
-  unit_of_measurement String
   amount              Int
+  unit_of_measurement String
   sales               sale_items[]
 }
