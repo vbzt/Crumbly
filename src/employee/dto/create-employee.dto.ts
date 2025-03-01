@@ -13,8 +13,7 @@ export class CreateEmployeeDTO{
   @IsEmail()
   email:string
 
-  @IsEnum(Role)
-  role: string
+
 
   @IsStrongPassword({
     minLength: 6,
@@ -24,5 +23,7 @@ export class CreateEmployeeDTO{
     minNumbers: 1
   })
   password: string
-
+  
+  @IsEnum(Role)
+  role: string
 }
