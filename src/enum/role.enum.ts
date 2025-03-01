@@ -1,4 +1,5 @@
 export enum Role{
   Cashier = 'CASHIER', 
-  Manager = 'MANAGER'
+  Manager = 'MANAGER',
+  Stocker = 'STOCKER'
 }
