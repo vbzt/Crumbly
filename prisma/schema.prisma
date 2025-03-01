@@ -12,20 +12,20 @@ model employees {
   name     String  @db.VarChar(65)
   phone    String  @db.VarChar(45)
   email    String  @db.VarChar(45)
-  role     String @db.VarChar(45) 
-  password String 
-
-  sales sales[] 
+  role     String  @db.VarChar(45)
+  password String
+  sales    sales[]
 }
 
 model sales {
-  id          Int     @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   employee_id Int
-  total_price Decimal @db.Decimal(10, 2)
+  total_price Decimal      @db.Decimal(10, 2)
   total_items Int
+  saleItems   sale_items[]
+  employee    employees    @relation(fields: [employee_id], references: [id], onDelete: Cascade)
 
-  employee employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
-  saleItems sale_items[]
+  @@index([employee_id], map: "sales_employee_id_fkey")
 }
 
 model sale_items {
@@ -34,17 +34,19 @@ model sale_items {
   product_id Int
   quantity   Int
   subtotal   Decimal @db.Decimal(10, 2)
+  product    stock   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  sale       sales   @relation(fields: [sale_id], references: [id], onDelete: Cascade)
 
-  sale    sales @relation(fields: [sale_id], references: [id], onDelete: Cascade)
-  product stock @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  @@index([product_id], map: "sale_items_product_id_fkey")
+  @@index([sale_id], map: "sale_items_sale_id_fkey")
 }
 
 model stock {
-  id       Int     @id @default(autoincrement())
-  name     String  @db.VarChar(100)
-  price    Decimal @db.Decimal(10, 2)
-  category String  @db.VarChar(65)
-  amount   Int
-
-  sales sale_items[] 
+  id                  Int          @id @default(autoincrement())
+  name                String       @db.VarChar(100)
+  price               Decimal      @db.Decimal(10, 2)
+  category            String       @db.VarChar(65)
+  unit_of_measurement String
+  amount              Int
+  sales               sale_items[]
 }
