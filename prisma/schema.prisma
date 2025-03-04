@@ -10,8 +10,8 @@ datasource db {
 model employees {
   id       Int     @id @default(autoincrement())
   name     String  @db.VarChar(65)
-  phone    String  @db.VarChar(45) @unique
-  email    String  @db.VarChar(45) @unique
+  phone    String  @unique @db.VarChar(45)
+  email    String  @unique @db.VarChar(45)
   role     String  @db.VarChar(45)
   password String
   sales    sales[]
