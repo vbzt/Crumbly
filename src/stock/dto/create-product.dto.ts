@@ -1,5 +1,5 @@
-import { Transform } from "class-transformer";
-import { IsDecimal, IsEnum, IsNumber, IsString, Min } from "class-validator";
+
+import { IsEnum, IsNumber, IsOptional, IsString, Min } from "class-validator";
 import { UOM } from "src/enum/unit-of-measurement.enum";
 
 
