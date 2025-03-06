@@ -50,3 +50,4 @@ model stock {
   unit_of_measurement String
   sales               sale_items[]
 }
+

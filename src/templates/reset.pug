@@ -1,12 +1,60 @@
 doctype html
 html
   head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
     title Password Reset Request
+    style.
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        font-size: 24px;
+        color: #333;
+      }
+      .content {
+        font-size: 16px;
+        color: #555;
+        text-align: center;
+      }
+      .button {
+        display: inline-block;
+        padding: 10px 20px;
+        margin-top: 20px;
+        background-color: #007bff;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+      .footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: #777;
+      }
   body
-    h1 Password Reset Request
-    p Hello, #{employeeName} has requested to reset their password.
-    p To confirm, click the link below:
-    a(href=resetUrl) Reset Password
-    p This link will expire in 15 minutes.
-    p Best regards,
-    p Support Team
+  .container
+    .header Password Reset Request
+    .content
+      p Hello, #{employeeName} has requested to reset their password.
+      p Click the button below to confirm the reset:
+      a.button(href=resetUrl target="_blank") Reset Password
+      p This link will expire in 15 minutes.
+    .footer
+      p &copy; 2025 
+        a(href="https://github.com/vbzt" target="_blank") vbzt
+        | . All rights reserved.
+  
