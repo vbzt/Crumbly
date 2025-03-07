@@ -6,6 +6,8 @@ import { AuthLoginDTO } from "./dto/auth-login.dto"
 import { JwtService } from "@nestjs/jwt"
 import { AuthForgotDTO } from "./dto/auth-forgot.dto"
 import { MailerService } from "@nestjs-modules/mailer";
+import { AuthResetDTO } from "./dto/auth-reset.dto";
+import { randomBytes } from "crypto";
 
 @Injectable()
 export class AuthService { 
@@ -79,34 +81,51 @@ export class AuthService {
     const manager = await this.prismaService.employees.findFirst( { where: { role: 'MANAGER' } } )
     if(!manager) throw new BadRequestException('Manager is not available right now, try again later!')
 
-    const salt = await bcrypt.genSalt( 12 )
-    data.password = await bcrypt.hash(data.password, salt)
+    const token = randomBytes(32).toString('hex')
 
-    const token = this.JWTService.sign(
-      { 
-        email: data.email,
-        newPassword: data.password
-      },
-      {
-        expiresIn: '5m',
-        subject: String(employee.id),
-        issuer: 'reset',
-        audience: 'MANAGER'
+    const expiresAt = new Date()
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15)
+
+    await this.prismaService.resetPasswordToken.create({
+      data: {
+        token,
+        employee_id: employee.id,
+        expiresAt: expiresAt,
+        used: false
       }
-    )
-
+    })
     await this.sendPasswordResetEmail(manager.email, token, employee.name)
+    return {      data: {
+      token,
+      employee_id: employee.id,
+      expiresAt: expiresAt,
+      used: false
+    }}
   }
 
-  async resetPassword(token: string){ 
-    await this.checkResetToken(token)
+  async resetPassword(token: string, resetData: AuthResetDTO){ 
+   
+    if(resetData.password !== resetData.confirmPassword){
+      throw new BadRequestException('Passwords do not match')
+    }
 
-    const employeeInfo = await this.checkResetToken(token)
-    const employee = await this.prismaService.employees.findUnique( { where: {email: employeeInfo.email }})
-    if(!employee) throw new NotFoundException('Employee do not exists')
-    employee.password = employeeInfo.newPassword
+    const payload = await this.prismaService.resetPasswordToken.findUnique( { where: { token } } )
+    if(!payload) throw new BadRequestException('Invalid JWT')
+    if(new Date() > payload.expiresAt) throw new BadRequestException('Invalid JWT')
+    if(payload.used) throw new BadRequestException('Invalid JWT')
+
+
+    
+    const employee = await this.prismaService.employees.findUnique({ where: { id: payload.employee_id } })
+    if (!employee) throw new NotFoundException('Employee does not exist')
+
+    
+    if(resetData.email !== employee.email) throw new UnauthorizedException('Email does not match the token')
+    const hashedPassword = await bcrypt.hash( resetData.password, 10)
+    employee.password = hashedPassword
   
     const updatedEmployee = await this.prismaService.employees.update( { where: { email: employee.email }, data: employee } )
+    await this.prismaService.resetPasswordToken.update( { where: { token }, data: { used: true } } )
     return updatedEmployee
     
   }

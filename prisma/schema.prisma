@@ -15,6 +15,7 @@ model employees {
   role     String  @db.VarChar(45)
   password String
   sales    sales[]
+  resetPasswordToken resetPasswordToken[] 
 }
 
 model sales {
@@ -51,3 +52,12 @@ model stock {
   sales               sale_items[]
 }
 
+model resetPasswordToken {
+  id          Int       @id @default(autoincrement())
+  token       String    @unique
+  employee_id Int
+  employee    employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  used        Boolean   @default(false)
+}
