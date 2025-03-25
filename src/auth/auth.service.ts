@@ -44,15 +44,6 @@ export class AuthService {
     }
   }
 
-  async checkResetToken( token: string ){ 
-    try {
-      const employeeInfo = this.JWTService.verify( token, { audience: 'MANAGER', issuer: 'reset' } ) 
-      return employeeInfo
-    } 
-    catch (e){ 
-      throw new BadRequestException('Invalid JWT')
-     }
-  }
 
   isValidToken(token: string, expectedAudience: string ){ 
     try {
@@ -76,7 +67,7 @@ export class AuthService {
   async forgotPassword(data: AuthForgotDTO){
 
     const employee = await this.prismaService.employees.findUnique( {where: { email: data.email } } )
-    if(!employee) throw new NotFoundException('Employee do not exists')
+    if(!employee) throw new NotFoundException('If the email')
 
     const manager = await this.prismaService.employees.findFirst( { where: { role: 'MANAGER' } } )
     if(!manager) throw new BadRequestException('Manager is not available right now, try again later!')
@@ -95,12 +86,7 @@ export class AuthService {
       }
     })
     await this.sendPasswordResetEmail(manager.email, token, employee.name)
-    return {      data: {
-      token,
-      employee_id: employee.id,
-      expiresAt: expiresAt,
-      used: false
-    }}
+    return { message: 'A confirmation email was sent to your manager. Wait until their approval.' }
   }
 
   async resetPassword(token: string, resetData: AuthResetDTO){ 
@@ -110,9 +96,9 @@ export class AuthService {
     }
 
     const payload = await this.prismaService.resetPasswordToken.findUnique( { where: { token } } )
-    if(!payload) throw new BadRequestException('Invalid JWT')
-    if(new Date() > payload.expiresAt) throw new BadRequestException('Invalid JWT')
-    if(payload.used) throw new BadRequestException('Invalid JWT')
+    if(!payload) throw new BadRequestException('Invalid token')
+    if(new Date() > payload.expiresAt) throw new BadRequestException('Invalid token')
+    if(payload.used) throw new BadRequestException('Invalid token')
 
 
     
@@ -129,8 +115,6 @@ export class AuthService {
     return updatedEmployee
     
   }
-
-
 
   async sendPasswordResetEmail(managerEmail: string, token: string, employeeName: string) {
     const resetUrl = `http://localhost:3000/auth/reset/${token}`;
