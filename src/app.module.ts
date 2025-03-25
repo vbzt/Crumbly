@@ -7,6 +7,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 
 import * as path from 'path';
+import { SalesModule } from './sales/sales.module';
 console.log(path.join(__dirname, '../templates/reset.pug'))
 
 @Module({
@@ -33,7 +34,8 @@ console.log(path.join(__dirname, '../templates/reset.pug'))
     }),
     AuthModule,
     EmployeeModule,
-    StockModule
+    StockModule,
+    SalesModule
   ],
 })
 export class AppModule {}
