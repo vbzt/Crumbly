@@ -7,9 +7,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 
 import * as path from 'path';
-import { SalesModule } from './sales/sales.module';
-console.log(path.join(__dirname, '../templates/reset.pug'))
-
+import { SalesModule } from './sales/sales.module'
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -38,5 +36,6 @@ console.log(path.join(__dirname, '../templates/reset.pug'))
     SalesModule
   ],
 })
+
 export class AppModule {}
  

@@ -33,7 +33,7 @@ export class AuthService {
     }
   }
 
-  async checkToken( token: string, expectedAudience: string ){ 
+  async checkToken( token: string, expectedAudience: string | undefined ){ 
 
     try {
       const employeeInfo = this.JWTService.verify( token, { audience: expectedAudience, issuer: 'login' } ) 
