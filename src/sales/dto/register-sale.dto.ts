@@ -4,10 +4,6 @@ import { SaleItemDTO } from "./sale-item.dto";
 
 
 export class RegisterSaleDTO{ 
-  @IsInt()
-  @IsPositive()
-  employeeId: number
-
   @IsArray()
   @ValidateNested( { each: true } )
   @Type(() => SaleItemDTO)
