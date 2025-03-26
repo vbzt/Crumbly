@@ -8,11 +8,13 @@ import { AuthForgotDTO } from "./dto/auth-forgot.dto"
 import { MailerService } from "@nestjs-modules/mailer";
 import { AuthResetDTO } from "./dto/auth-reset.dto";
 import { randomBytes } from "crypto";
+import { AuthRegisterDTO } from "./dto/auth.register.dto";
+import { EmployeeService } from "src/employee/employee.service";
 
 @Injectable()
 export class AuthService { 
   
-  constructor(private readonly prismaService: PrismaService, private readonly JWTService: JwtService, private readonly mailerService: MailerService) { }
+  constructor(private readonly prismaService: PrismaService, private readonly JWTService: JwtService, private readonly mailerService: MailerService, private readonly employeeService: EmployeeService) { }
 
   async createToken( employee: employees ){ 
     return { 
@@ -52,6 +54,14 @@ export class AuthService {
     } catch (error) {
       return false 
     }
+  }
+
+  async register(data: AuthRegisterDTO){ 
+    if(data.password !== data.confirmPassword) throw new BadRequestException('Passwords must match.')
+    const { confirmPassword, ...employeeData} = data
+    const employee = await this.employeeService.createEmployee(employeeData)
+    return this.createToken(employee)
+    
   }
 
   async login(data: AuthLoginDTO){

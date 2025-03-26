@@ -1,4 +1,4 @@
-import { Body, Injectable, NotFoundException } from "@nestjs/common";
+import { Body, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateEmployeeDTO } from "./dto/create-employee.dto";
 import * as bcrypt from 'bcrypt'
@@ -9,6 +9,8 @@ export class EmployeeService{
    constructor(private readonly prisma: PrismaService) { }
 
   async createEmployee(data: CreateEmployeeDTO){
+    const existingEmployee = await this.prisma.employees.findFirst( { where: { OR: [ {  email: data.email }, { phone: data.phone } ] } })
+    if(existingEmployee) throw new ConflictException('Employee already registered.')
     const salt = await bcrypt.genSalt()
     data.password = await bcrypt.hash(data.password, salt)
     return this.prisma.employees.create( { data })
