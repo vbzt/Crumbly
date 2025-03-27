@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@n
 import { SalesService } from "./sales.service";
 import { RegisterSaleDTO } from "./dto/register-sale.dto";
 import { AuthGuard } from "src/guards/auth.guard";
+import { Employee } from "src/decorators/employee.decorator";
 
 @UseGuards(AuthGuard)
 @Controller('sales')
@@ -30,8 +31,8 @@ export class SalesController{
   }
 
   @Post('')
-  async registerSale(@Body() saleData: RegisterSaleDTO){  
-
+  async registerSale(@Body() saleData: RegisterSaleDTO, @Employee('id') id: number){  
+    return this.salesService.registerSale(  saleData, id)
   }
 
   @Patch('/:id/items/:itemId')
