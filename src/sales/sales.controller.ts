@@ -3,6 +3,7 @@ import { SalesService } from "./sales.service";
 import { RegisterSaleDTO } from "./dto/register-sale.dto";
 import { AuthGuard } from "src/guards/auth.guard";
 import { Employee } from "src/decorators/employee.decorator";
+import { ParamId } from "src/decorators/param.id.decorator";
 
 @UseGuards(AuthGuard)
 @Controller('sales')
@@ -16,18 +17,18 @@ export class SalesController{
   }
 
   @Get('/:id')
-  async getSale(@Param() { id }){ 
+  async getSale(@ParamId()  id: number ){ 
     return this.salesService.getSale( id )
   }
 
   @Get(':id/items')
-  async showSaleItems(@Param() { id }){
+  async showSaleItems(@ParamId()  id:number) { 
     return this.salesService.showSaleItems( id )
   }
   
   @Get(':id/items/:itemId')
-  async getSaleItem(@Param() { id, itemId }){
-
+  async getSaleItem(@ParamId() id:number, @Param() { itemId }){
+    return this.salesService.getSaleItem(id, itemId)
   }
 
   @Post('')
