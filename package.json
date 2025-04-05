@@ -1,8 +1,8 @@
 {
-  "name": "buzato-api",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "name": "backery-api",
+  "version": "1",
+  "description": "NestJS + PrismaORM bakery api",
+  "author": "vbzt",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
