@@ -28,7 +28,7 @@ export class SalesController{
   }
   
   @Get(':id/items/:itemId')
-  async getSaleItem(@ParamId() id:number, @Param() { itemId }){
+  async getSaleItem(@ParamId() id:number, @ParamId('itemId') itemId:number,){
     return this.salesService.getSaleItem(id, itemId)
   }
 
@@ -38,12 +38,17 @@ export class SalesController{
   }
 
   @Patch('/:id/items/:itemId')
-  async updateSaleItem(@Param() { id, itemId }, @Body() quantity: UpdateSaleItemDTO){ 
+  async updateSaleItem(@ParamId() id:number, @ParamId('itemId') itemId:number, @Body() quantity: UpdateSaleItemDTO){ 
     return this.salesService.updateSaleItem(quantity, id, itemId)
   }
 
+  @Delete('/:id')
+  async deleteSale(@ParamId() id:number){ 
+    return this.salesService.deleteSale(id)
+  }
+
   @Delete('/:id/items/:itemId')
-  async deleteSaleItem(){ 
+  async deleteSaleItem(@ParamId() id:number, @ParamId('itemId') itemId:number){ 
 
   }
 

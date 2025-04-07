@@ -16,7 +16,7 @@ export class SalesService {
   }
 
   async getSale(id: number) {
-    const sale = this.prismaService.sales.findFirst( { where: { id } } )
+    const sale = await this.prismaService.sales.findFirst( { where: { id } } )
     if(!sale) throw new NotFoundException('Sale do not exists')
     return sale
   }
@@ -102,6 +102,18 @@ export class SalesService {
     const updatedSale = await this.prismaService.sales.update( { data: { total_price: updatedSaleTotalPrice }, where: { id: sale!.id} } )
 
     return { updatedSaleItem, updatedSale, updatedStock }
+  }
+
+  async deleteSale(id:number){ 
+    const sale = await this.getSale(id) 
+    const saleItems = await this.prismaService.sale_items.findMany( { where: { sale_id: sale?.id}})
+    for( const sale of saleItems ){ 
+      const currentItemStock = await this.prismaService.stock.findFirst( { where: { id: sale.product_id } } )
+      const updatedItemStock = await this.prismaService.stock.update( { data: { amount: currentItemStock!.amount + sale.quantity }, where: { id: sale.product_id} })
+      await this.prismaService.sale_items.delete( { where: { id: sale.id } } )
+    }
+    const deletedSale =  await this.prismaService.sales.delete( { where: { id } } )
+    return { deletedSale, saleItems }
   }
 
   validateItems = async (saleData: RegisterSaleDTO) => {
