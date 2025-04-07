@@ -30,10 +30,10 @@ export class SalesService {
   }
 
   async getSaleItem(id:number, itemId:number){
-    const saleItem =  await this.prismaService.sale_items.findFirst( { where: { sale_id: id, product_id: Number(itemId)}})
+    const saleItem =  await this.prismaService.sale_items.findFirst( { where: { sale_id: id, product_id: itemId}})
     if(!saleItem) throw new NotFoundException('Product is not registered in current sale')
 
-    const item = await this.prismaService.stock.findFirst( { where: { id: Number(itemId)}})
+    const item = await this.prismaService.stock.findFirst( { where: { id: itemId}})
     return { saleItem, item }
   }
 
@@ -89,9 +89,9 @@ export class SalesService {
   }
 
   async updateSaleItem({ quantity }: UpdateSaleItemDTO, id: number, itemId: number){
-    const sale = await this.getSale(Number(id))
-    const saleItem = (await this.getSaleItem(sale!.id, Number(itemId))).saleItem
-    const product = await this.getProduct(Number(itemId), quantity)
+    const sale = await this.getSale(id)
+    const saleItem = (await this.getSaleItem(sale!.id, itemId)).saleItem
+    const product = await this.getProduct(itemId, quantity)
 
     const updatedProductStock = product.amount - ( quantity - saleItem.quantity )
     const updatedSaleItemSubtotal = product.price.toNumber() * quantity
