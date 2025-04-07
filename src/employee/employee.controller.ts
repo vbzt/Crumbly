@@ -9,7 +9,7 @@ export class EmployeeController {
 
   constructor ( private readonly employeeService: EmployeeService) {}
   
-  @Get( )
+  @Get()
   async showEmployees(){ 
     return this.employeeService.showEmployees()
   }
