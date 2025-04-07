@@ -88,8 +88,7 @@ export class SalesService {
     }
   }
 
-  async updateSaleItem({ quantity }: UpdateSaleItemDTO, id: number, itemId: number){ 
-    console.log('sale update')
+  async updateSaleItem({ quantity }: UpdateSaleItemDTO, id: number, itemId: number){
     const sale = await this.getSale(Number(id))
     const saleItem = (await this.getSaleItem(sale!.id, Number(itemId))).saleItem
     const product = await this.getProduct(Number(itemId), quantity)
