@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { PrismaService } from "src/prisma/prisma.service"
 import { RegisterSaleDTO } from "./dto/register-sale.dto"
 import { StockService } from "src/stock/stock.service"
-import { UpdateProductDTO } from "src/stock/dto/update-product.dto"
+import { UpdateSaleItemDTO } from "./dto/update-sale-item.dto"
 
 @Injectable()
 export class SalesService {
@@ -16,22 +16,25 @@ export class SalesService {
   }
 
   async getSale(id: number) {
-    if(!id || isNaN(Number(id))) throw new BadRequestException('Id must be a number')
-    return this.prismaService.sales.findFirst( { where: { id } } )
+    const sale = this.prismaService.sales.findFirst( { where: { id } } )
+    if(!sale) throw new NotFoundException('Sale do not exists')
+    return sale
   }
 
   async showSaleItems(id: number) {
-    const sale = await this.prismaService.sale_items.findMany({ where: { sale_id: id } })
-    if(sale.length === 0) throw new NotFoundException("Sale do not exists")
-    return sale
+    const sale = await this.prismaService.sales.findFirst( { where: { id } } )
+    if(!sale) throw new NotFoundException('Sale do not exists')
+    const saleItems = await this.prismaService.sale_items.findMany({ where: { sale_id: sale.id } })
+    return saleItems
 
   }
 
   async getSaleItem(id:number, itemId:number){
-    const itemSale =  await this.prismaService.sale_items.findFirst( { where: { sale_id: id, product_id: Number(itemId)}})
+    const saleItem =  await this.prismaService.sale_items.findFirst( { where: { sale_id: id, product_id: Number(itemId)}})
+    if(!saleItem) throw new NotFoundException('Product is not registered in current sale')
+
     const item = await this.prismaService.stock.findFirst( { where: { id: Number(itemId)}})
-    
-    return { itemSale, item }
+    return { saleItem, item }
   }
 
   async registerSale(saleData: RegisterSaleDTO, id: number) {
@@ -85,23 +88,43 @@ export class SalesService {
     }
   }
 
+  async updateSaleItem({ quantity }: UpdateSaleItemDTO, id: number, itemId: number){ 
+    console.log('sale update')
+    const sale = await this.getSale(Number(id))
+    const saleItem = (await this.getSaleItem(sale!.id, Number(itemId))).saleItem
+    const product = await this.getProduct(Number(itemId), quantity)
+
+    const updatedProductStock = product.amount - ( quantity - saleItem.quantity )
+    const updatedSaleItemSubtotal = product.price.toNumber() * quantity
+    const updatedSaleTotalPrice = sale!.total_price.toNumber() - ( updatedSaleItemSubtotal - saleItem.subtotal.toNumber())
+
+    const updatedStock = await this.prismaService.stock.update( { data: { amount: updatedProductStock }, where: { id: saleItem.product_id } } )
+    const updatedSaleItem = await this.prismaService.sale_items.update( { data: { subtotal: updatedSaleItemSubtotal, quantity }, where: { id: saleItem.id } })
+    const updatedSale = await this.prismaService.sales.update( { data: { total_price: updatedSaleTotalPrice }, where: { id: sale!.id} } )
+
+    return { updatedSaleItem, updatedSale, updatedStock }
+  }
+
   validateItems = async (saleData: RegisterSaleDTO) => {
     let totalSaleValue = 0
-    const items = await Promise.all(
-      saleData.saleItems.map(async (item) => {
-        const product = await this.getProduct(item.product_id, item.quantity)
-        const subtotal = item.quantity * product.price.toNumber()
-        totalSaleValue += subtotal
-        return {
-          product_id: product.id,
-          quantity: item.quantity,
-          subtotal,
-        }
+    const items: { product_id: number; quantity: number; subtotal: number }[] = []
+  
+    for (const item of saleData.saleItems) {
+      const product = await this.getProduct(item.product_id, item.quantity)
+      const subtotal = item.quantity * product.price.toNumber()
+      totalSaleValue += subtotal
+  
+      items.push({
+        product_id: product.id,
+        quantity: item.quantity,
+        subtotal,
       })
-    )
-
+    }
+  
     return { items, totalSaleValue }
   }
+  
+  
 
   getProduct = async (prodId: number, qnt: number) => {
     const product = await this.prismaService.stock.findFirst({ where: { id: prodId } })
