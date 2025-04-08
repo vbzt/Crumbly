@@ -49,7 +49,7 @@ export class SalesController{
 
   @Delete('/:id/items/:itemId')
   async deleteSaleItem(@ParamId() id:number, @ParamId('itemId') itemId:number){ 
-
+    return this.salesService.deleteSaleItem(id, itemId)
   }
 
 }

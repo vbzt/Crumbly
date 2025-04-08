@@ -91,7 +91,7 @@ export class SalesService {
   async updateSaleItem({ quantity }: UpdateSaleItemDTO, id: number, itemId: number){
     const sale = await this.getSale(id)
     const saleItem = (await this.getSaleItem(sale!.id, itemId)).saleItem
-    const product = await this.getProduct(itemId, quantity)
+    const product = await this.getProduct(saleItem.product_id, quantity)
 
     const updatedProductStock = product.amount - ( quantity - saleItem.quantity )
     const updatedSaleItemSubtotal = product.price.toNumber() * quantity
@@ -115,6 +115,24 @@ export class SalesService {
     const deletedSale =  await this.prismaService.sales.delete( { where: { id } } )
     return { deletedSale, saleItems }
   }
+
+  async deleteSaleItem(id: number, itemId: number){ 
+    const sale = await this.getSale(id)
+    const saleItem = (await this.getSaleItem(sale!.id, itemId)).saleItem
+    if(!saleItem) throw new NotFoundException('Product is not registered in current sale')
+    const product = await this.getProduct(saleItem.product_id, saleItem.quantity)
+
+    const updatedSaleTotalPrice = sale.total_price.toNumber() - saleItem.subtotal.toNumber()
+    const updatedSaleTotalItems = sale.total_items - 1
+    const updatedProductStock = product.amount + saleItem.quantity
+    
+
+    const updatedStock = await this.prismaService.stock.update( { data: { amount: updatedProductStock }, where: { id: saleItem.product_id } } )
+    const deletedSaleItem = await this.prismaService.sale_items.delete( { where: { id: saleItem.id} } )
+    const updatedSale = await this.prismaService.sales.update( { data: { total_price: updatedSaleTotalPrice, total_items: updatedSaleTotalItems}, where: { id: sale!.id} } )
+
+    return { deletedSaleItem, updatedSale, updatedStock}
+  } 
 
   validateItems = async (saleData: RegisterSaleDTO) => {
     let totalSaleValue = 0
