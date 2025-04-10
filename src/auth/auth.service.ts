@@ -213,9 +213,8 @@ export class AuthService {
       </body>
       </html>
     `;
-  
     await this.resendClient.emails.send({
-      from: 'Acme onboarding@resend.dev',
+      from: 'Acme <onboarding@resend.dev>',
       to: managerEmail,
       subject: `Password reset confirmation for ${employeeName}`,
       html,
