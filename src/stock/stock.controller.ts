@@ -1,10 +1,15 @@
-import { Body, Controller, Delete, Get, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Patch, Post, UseGuards } from "@nestjs/common";
 import { StockService } from "./stock.service";
 import { ParamId } from "src/decorators/param.id.decorator";
 import { CreateProductDTO } from "./dto/create-product.dto";
 import { UpdateProductDTO } from "./dto/update-product.dto";
+import { AuthGuard } from "src/guards/auth.guard";
+import { Role } from "src/enum/role.enum";
+import { RoleGuard } from "src/guards/role.guard";
+import { Roles } from "src/decorators/roles.decorator";
 
-
+@UseGuards(AuthGuard, RoleGuard)
+@Roles(Role.Stocker, Role.Manager)
 @Controller('stock')
 export class StockController{ 
 
