@@ -3,32 +3,21 @@ import { AuthModule } from './auth/auth.module';
 import { EmployeeModule } from './employee/employee.module';
 import { StockModule } from './stock/stock.module';
 import { ConfigModule } from '@nestjs/config';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
 
 import * as path from 'path';
 import { SalesModule } from './sales/sales.module'
+import { ResendModule } from 'nest-resend';
+
+const resendApiKey = process.env.RESEND_API_KEY;
+if (!resendApiKey) {
+  throw new Error('RESEND_API_KEY is not defined in environment variables');
+}
+
+
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    MailerModule.forRoot({
-      transport: {
-        service: 'gmail',
-        auth: {
-          user: process.env.GMAIL_USER,
-          pass: process.env.GMAIL_PASS,
-        },
-      },
-      defaults: {
-        from: '"No Reply" <no-reply@gmail.com>',
-      },
-      template: {
-        dir: path.join(__dirname, '../src/templates'),
-        adapter: new PugAdapter(),
-        options: {
-          strict: true,
-        },
-      },
+    ResendModule.forRoot({
+      apiKey: resendApiKey,
     }),
     AuthModule,
     EmployeeModule,

@@ -5,8 +5,12 @@ import { AuthGuard } from "src/guards/auth.guard";
 import { Employee } from "src/decorators/employee.decorator";
 import { ParamId } from "src/decorators/param.id.decorator";
 import { UpdateSaleItemDTO } from "./dto/update-sale-item.dto";
+import { RoleGuard } from "src/guards/role.guard";
+import { Roles } from "src/decorators/roles.decorator";
+import { Role } from "src/enum/role.enum";
 
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, RoleGuard)
+@Roles(Role.Cashier, Role.Manager)
 @Controller('sales')
 export class SalesController{ 
 

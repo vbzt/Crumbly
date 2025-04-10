@@ -5,16 +5,17 @@ import * as bcrypt from 'bcrypt'
 import { AuthLoginDTO } from "./dto/auth-login.dto"
 import { JwtService } from "@nestjs/jwt"
 import { AuthForgotDTO } from "./dto/auth-forgot.dto"
-import { MailerService } from "@nestjs-modules/mailer";
 import { AuthResetDTO } from "./dto/auth-reset.dto";
 import { randomBytes } from "crypto";
 import { AuthRegisterDTO } from "./dto/auth.register.dto";
 import { EmployeeService } from "src/employee/employee.service";
+import { InjectResend } from "nest-resend";
+import { Resend } from 'resend'
 
 @Injectable()
 export class AuthService { 
   
-  constructor(private readonly prismaService: PrismaService, private readonly JWTService: JwtService, private readonly mailerService: MailerService, private readonly employeeService: EmployeeService) { }
+  constructor(private readonly prismaService: PrismaService, private readonly JWTService: JwtService, @InjectResend() private readonly resendClient: Resend, private readonly employeeService: EmployeeService) { }
 
   async createToken( employee: employees ){ 
     return { 
@@ -128,16 +129,97 @@ export class AuthService {
 
   async sendPasswordResetEmail(managerEmail: string, token: string, employeeName: string) {
     const resetUrl = `http://localhost:3000/auth/reset/${token}`;
-    await this.mailerService.sendMail({
+  
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Password Reset Request</title>
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+          }
+          .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+          }
+          .header {
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 20px;
+          }
+          .content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #555;
+            text-align: center;
+          }
+          .button {
+            display: inline-block;
+            padding: 12px 24px;
+            margin-top: 25px;
+            background-color: #28a745;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+            transition: background-color 0.3s ease;
+          }
+          .button:hover {
+            background-color: #218838;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+          }
+          .footer a {
+            color: #007bff;
+            text-decoration: none;
+          }
+          .footer a:hover {
+            text-decoration: underline;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">Password Reset Request</div>
+          <div class="content">
+            <p>Hello, <strong>${employeeName}</strong> has requested to reset their password.</p>
+            <p>Click the button below to confirm the reset:</p>
+            <a class="button" href="${resetUrl}" target="_blank">Reset Password</a>
+            <p>This link will expire in 15 minutes.</p>
+          </div>
+          <div class="footer">
+            <p>&copy; 2025 <a href="https://github.com/vbzt" target="_blank">vbzt</a>. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  
+    await this.resendClient.emails.send({
+      from: 'Acme onboarding@resend.dev',
       to: managerEmail,
       subject: `Password reset confirmation for ${employeeName}`,
-      template: './reset',
-      context: {
-        employeeName,
-        resetUrl,
-      },
-    })
-
+      html,
+    });
   }
 
 }

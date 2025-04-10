@@ -4,12 +4,11 @@ import { PrismaModule } from "src/prisma/prisma.module";
 import { SalesService } from "./sales.service";
 import { AuthModule } from "src/auth/auth.module";
 import { EmployeeModule } from "src/employee/employee.module";
-import { StockModule } from "src/stock/stock.module";
 import { IdCheckMiddleware } from "src/middlewares/check-id.middleware";
 import { ItemIdCheckMiddleware } from "src/middlewares/check-item-id.middleware";
 
 @Module({
-  imports: [PrismaModule, AuthModule, EmployeeModule, StockModule],
+  imports: [PrismaModule, AuthModule, EmployeeModule],
   providers: [SalesService],
   controllers: [SalesController],
 })

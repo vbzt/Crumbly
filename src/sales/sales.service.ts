@@ -1,15 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common"
 import { PrismaService } from "src/prisma/prisma.service"
 import { RegisterSaleDTO } from "./dto/register-sale.dto"
-import { StockService } from "src/stock/stock.service"
 import { UpdateSaleItemDTO } from "./dto/update-sale-item.dto"
 
 @Injectable()
 export class SalesService {
-  constructor(
-    private readonly prismaService: PrismaService,
-    private readonly stockService: StockService
-  ) {}
+  constructor( private readonly prismaService: PrismaService)  {}
 
   async showSales() {
     return this.prismaService.sales.findMany()
@@ -134,6 +130,7 @@ export class SalesService {
     return { deletedSaleItem, updatedSale, updatedStock}
   } 
 
+
   validateItems = async (saleData: RegisterSaleDTO) => {
     let totalSaleValue = 0
     const items: { product_id: number; quantity: number; subtotal: number }[] = []
@@ -153,8 +150,6 @@ export class SalesService {
     return { items, totalSaleValue }
   }
   
-  
-
   getProduct = async (prodId: number, qnt: number) => {
     const product = await this.prismaService.stock.findFirst({ where: { id: prodId } })
     if (!product) {
