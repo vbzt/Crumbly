@@ -8,25 +8,25 @@ export class SalesService {
   constructor( private readonly prismaService: PrismaService)  {}
 
   async showSales() {
-    return this.prismaService.sales.findMany()
+    return this.prismaService.sale.findMany()
   }
 
   async getSale(id: number) {
-    const sale = await this.prismaService.sales.findFirst( { where: { id } } )
+    const sale = await this.prismaService.sale.findFirst( { where: { id } } )
     if(!sale) throw new NotFoundException('Sale do not exists')
     return sale
   }
 
   async showSaleItems(id: number) {
-    const sale = await this.prismaService.sales.findFirst( { where: { id } } )
+    const sale = await this.prismaService.sale.findFirst( { where: { id } } )
     if(!sale) throw new NotFoundException('Sale do not exists')
-    const saleItems = await this.prismaService.sale_items.findMany({ where: { sale_id: sale.id } })
+    const saleItems = await this.prismaService.saleItem.findMany({ where: { saleId: sale.id } })
     return saleItems
 
   }
 
   async getSaleItem(id:number, itemId:number){
-    const saleItem =  await this.prismaService.sale_items.findFirst( { where: { sale_id: id, product_id: itemId}})
+    const saleItem =  await this.prismaService.saleItem.findFirst( { where: { saleId: id, productId: itemId}})
     if(!saleItem) throw new NotFoundException('Product is not registered in current sale')
 
     const item = await this.prismaService.stock.findFirst( { where: { id: itemId}})
@@ -41,14 +41,14 @@ export class SalesService {
     const { items, totalSaleValue } = await this.validateItems(saleData)
 
     const registeredSale = await this.prismaService.$transaction(async (trx) => {
-      const sale = await trx.sales.create({
-        data: { employee_id: id, total_price: totalSaleValue, total_items: saleData.saleItems.length },
+      const sale = await trx.sale.create({
+        data: { employeeId: id, totalPrice: totalSaleValue, totalItems: saleData.saleItems.length },
       })
 
-      await trx.sale_items.createMany({
+      await trx.saleItem.createMany({
         data: items.map((item) => ({
-          sale_id: sale.id,
-          product_id: item.product_id,
+          saleId: sale.id,
+          productId: item.product_id,
           quantity: item.quantity,
           subtotal: item.subtotal,
         })),
@@ -86,28 +86,28 @@ export class SalesService {
   async updateSaleItem({ quantity }: UpdateSaleItemDTO, id: number, itemId: number){
     const sale = await this.getSale(id)
     const saleItem = (await this.getSaleItem(sale!.id, itemId)).saleItem
-    const product = await this.getProduct(saleItem.product_id, quantity)
+    const product = await this.getProduct(saleItem.productId, quantity)
 
     const updatedProductStock = product.amount - ( quantity - saleItem.quantity )
     const updatedSaleItemSubtotal = product.price.toNumber() * quantity
-    const updatedSaleTotalPrice = sale!.total_price.toNumber() - ( updatedSaleItemSubtotal - saleItem.subtotal.toNumber())
+    const updatedSaleTotalPrice = sale!.totalPrice.toNumber() - ( updatedSaleItemSubtotal - saleItem.subtotal.toNumber())
 
-    const updatedStock = await this.prismaService.stock.update( { data: { amount: updatedProductStock }, where: { id: saleItem.product_id } } )
-    const updatedSaleItem = await this.prismaService.sale_items.update( { data: { subtotal: updatedSaleItemSubtotal, quantity }, where: { id: saleItem.id } })
-    const updatedSale = await this.prismaService.sales.update( { data: { total_price: updatedSaleTotalPrice }, where: { id: sale!.id} } )
+    const updatedStock = await this.prismaService.stock.update( { data: { amount: updatedProductStock }, where: { id: saleItem.productId } } )
+    const updatedSaleItem = await this.prismaService.saleItem.update( { data: { subtotal: updatedSaleItemSubtotal, quantity }, where: { id: saleItem.id } })
+    const updatedSale = await this.prismaService.sale.update( { data: { totalPrice: updatedSaleTotalPrice }, where: { id: sale!.id} } )
 
     return { updatedSaleItem, updatedSale, updatedStock }
   }
 
   async deleteSale(id:number){ 
     const sale = await this.getSale(id) 
-    const saleItems = await this.prismaService.sale_items.findMany( { where: { sale_id: sale?.id}})
+    const saleItems = await this.prismaService.saleItem.findMany( { where: { saleId: sale?.id}})
     for( const sale of saleItems ){ 
-      const currentItemStock = await this.prismaService.stock.findFirst( { where: { id: sale.product_id } } )
-      const updatedItemStock = await this.prismaService.stock.update( { data: { amount: currentItemStock!.amount + sale.quantity }, where: { id: sale.product_id} })
-      await this.prismaService.sale_items.delete( { where: { id: sale.id } } )
+      const currentItemStock = await this.prismaService.stock.findFirst( { where: { id: sale.productId } } )
+      const updatedItemStock = await this.prismaService.stock.update( { data: { amount: currentItemStock!.amount + sale.quantity }, where: { id: sale.productId} })
+      await this.prismaService.saleItem.delete( { where: { id: sale.id } } )
     }
-    const deletedSale =  await this.prismaService.sales.delete( { where: { id } } )
+    const deletedSale =  await this.prismaService.sale.delete( { where: { id } } )
     return { deletedSale, saleItems }
   }
 
@@ -115,16 +115,16 @@ export class SalesService {
     const sale = await this.getSale(id)
     const saleItem = (await this.getSaleItem(sale!.id, itemId)).saleItem
     if(!saleItem) throw new NotFoundException('Product is not registered in current sale')
-    const product = await this.getProduct(saleItem.product_id, saleItem.quantity)
+    const product = await this.getProduct(saleItem.productId, saleItem.quantity)
 
-    const updatedSaleTotalPrice = sale.total_price.toNumber() - saleItem.subtotal.toNumber()
-    const updatedSaleTotalItems = sale.total_items - 1
+    const updatedSaleTotalPrice = sale.totalPrice.toNumber() - saleItem.subtotal.toNumber()
+    const updatedSaleTotalItems = sale.totalItems - 1
     const updatedProductStock = product.amount + saleItem.quantity
     
 
-    const updatedStock = await this.prismaService.stock.update( { data: { amount: updatedProductStock }, where: { id: saleItem.product_id } } )
-    const deletedSaleItem = await this.prismaService.sale_items.delete( { where: { id: saleItem.id} } )
-    const updatedSale = await this.prismaService.sales.update( { data: { total_price: updatedSaleTotalPrice, total_items: updatedSaleTotalItems}, where: { id: sale!.id} } )
+    const updatedStock = await this.prismaService.stock.update( { data: { amount: updatedProductStock }, where: { id: saleItem.productId } } )
+    const deletedSaleItem = await this.prismaService.saleItem.delete( { where: { id: saleItem.id} } )
+    const updatedSale = await this.prismaService.sale.update( { data: { totalPrice: updatedSaleTotalPrice, totalItems: updatedSaleTotalItems}, where: { id: sale!.id} } )
 
     return { deletedSaleItem, updatedSale, updatedStock}
   } 

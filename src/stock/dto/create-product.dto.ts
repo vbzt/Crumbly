@@ -20,6 +20,6 @@ export class CreateProductDTO{
   amount: number
 
   @IsEnum(UOM)
-  unit_of_measurement: string
+  unitOfMeasurement: string
 
 }

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { PrismaService } from "src/prisma/prisma.service"
-import { employees } from '@prisma/client'
+import { Employee } from '@prisma/client'
 import * as bcrypt from 'bcrypt' 
 import { AuthLoginDTO } from "./dto/auth-login.dto"
 import { JwtService } from "@nestjs/jwt"
@@ -17,7 +17,7 @@ export class AuthService {
   
   constructor(private readonly prismaService: PrismaService, private readonly JWTService: JwtService, @InjectResend() private readonly resendClient: Resend, private readonly employeeService: EmployeeService) { }
 
-  async createToken( employee: employees ){ 
+  async createToken( employee: Employee ){ 
     return { 
       accessToken: this.JWTService.sign( 
         { 
@@ -66,7 +66,7 @@ export class AuthService {
   }
 
   async login(data: AuthLoginDTO){
-    const employee = await this.prismaService.employees.findFirst( { where: { email: data.email }} )
+    const employee = await this.prismaService.employee.findFirst( { where: { email: data.email }} )
     if(!employee) throw new UnauthorizedException('Incorrect email or password.') 
 
     const comparedPassword = await bcrypt.compare(data.password, employee.password)
@@ -77,10 +77,10 @@ export class AuthService {
 
   async forgotPassword(data: AuthForgotDTO){
 
-    const employee = await this.prismaService.employees.findUnique( {where: { email: data.email } } )
+    const employee = await this.prismaService.employee.findUnique( {where: { email: data.email } } )
     if(!employee) throw new NotFoundException('If the email')
 
-    const manager = await this.prismaService.employees.findFirst( { where: { role: 'MANAGER' } } )
+    const manager = await this.prismaService.employee.findFirst( { where: { role: 'MANAGER' } } )
     if(!manager) throw new BadRequestException('Manager is not available right now, try again later!')
 
     const token = randomBytes(32).toString('hex')
@@ -91,7 +91,7 @@ export class AuthService {
     await this.prismaService.resetPasswordToken.create({
       data: {
         token,
-        employee_id: employee.id,
+        employeeId: employee.id,
         expiresAt: expiresAt,
         used: false
       }
@@ -113,7 +113,7 @@ export class AuthService {
 
 
     
-    const employee = await this.prismaService.employees.findUnique({ where: { id: payload.employee_id } })
+    const employee = await this.prismaService.employee.findUnique({ where: { id: payload.employeeId } })
     if (!employee) throw new NotFoundException('Employee does not exist')
 
     
@@ -121,7 +121,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash( resetData.password, 10)
     employee.password = hashedPassword
   
-    const updatedEmployee = await this.prismaService.employees.update( { where: { email: employee.email }, data: employee } )
+    const updatedEmployee = await this.prismaService.employee.update( { where: { email: employee.email }, data: employee } )
     await this.prismaService.resetPasswordToken.update( { where: { token }, data: { used: true } } )
     return updatedEmployee
     

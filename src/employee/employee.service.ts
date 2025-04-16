@@ -9,11 +9,11 @@ export class EmployeeService{
    constructor(private readonly prisma: PrismaService) { }
 
   async createEmployee(data: CreateEmployeeDTO){
-    const existingEmployee = await this.prisma.employees.findFirst( { where: { OR: [ {  email: data.email }, { phone: data.phone } ] } })
+    const existingEmployee = await this.prisma.employee.findFirst( { where: { OR: [ {  email: data.email }, { phone: data.phone } ] } })
     if(existingEmployee) throw new ConflictException('Employee already registered.')
     const salt = await bcrypt.genSalt()
     data.password = await bcrypt.hash(data.password, salt)
-    return this.prisma.employees.create( { data })
+    return this.prisma.employee.create( { data })
   }
 
   async updateEmployee(id: number, data: UpdateEmployeeDTO){
@@ -22,25 +22,25 @@ export class EmployeeService{
       const salt = await bcrypt.genSalt()
       data.password = await bcrypt.hash(data.password, salt)
     }
-    return this.prisma.employees.update( { data, where: { id }, select: { id: true, name: true, email: true, phone: true, role: true } } )
+    return this.prisma.employee.update( { data, where: { id }, select: { id: true, name: true, email: true, phone: true, role: true } } )
   }
 
   async showEmployees(){ 
-    return this.prisma.employees.findMany( { select: { id: true, name: true, email: true, phone: true, role: true }})
+    return this.prisma.employee.findMany( { select: { id: true, name: true, email: true, phone: true, role: true }})
   }
 
   async getEmployee(id: number){
     await this.employeeExists(id)
-    return await this.prisma.employees.findUnique( { where: {id}, select: { id: true, name: true, email: true, phone: true, role: true } } )
+    return await this.prisma.employee.findUnique( { where: {id}, select: { id: true, name: true, email: true, phone: true, role: true } } )
   }
 
   async deleteEmployee(id:number){
     await this.employeeExists(id)
-    return await this.prisma.employees.delete( { where: {id} })
+    return await this.prisma.employee.delete( { where: {id} })
   }
 
   async employeeExists(id: number){ 
-    if(!(await this.prisma.employees.count({ where: { id } }))){
+    if(!(await this.prisma.employee.count({ where: { id } }))){
       throw new NotFoundException('Employee do not exist')
     }
   }

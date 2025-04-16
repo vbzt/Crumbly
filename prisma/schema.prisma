@@ -7,57 +7,115 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model employees {
+enum CommandStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+model Employee {
   id       Int     @id @default(autoincrement())
   name     String  @db.VarChar(65)
   phone    String  @unique @db.VarChar(45)
   email    String  @unique @db.VarChar(45)
   role     String  @db.VarChar(45)
   password String
-  sales    sales[]
-  resetPasswordToken resetPasswordToken[] 
+
+  sales    Sale[]
+  resetTokens ResetPasswordToken[]
+  commands Command[]
+
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @db.Timestamp(0)
+
+  @@map("Employees")
 }
 
-model sales {
-  id          Int          @id @default(autoincrement())
-  employee_id Int
-  total_price Decimal      @db.Decimal(10, 2)
-  total_items Int
-  saleItems   sale_items[]
-  employee    employees    @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+model Sale {
+  id          Int     @id @default(autoincrement())
+  employeeId  Int     @map("employee_id")
+  totalPrice  Decimal @db.Decimal(10, 2) @map("total_price")
+  totalItems  Int     @map("total_items")
+  
+  saleItems   SaleItem[]
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
-  @@index([employee_id], map: "sales_employee_id_fkey")
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([employeeId], map: "sales_employee_id_fkey")
+  @@map("Sales")
 }
 
-model sale_items {
-  id         Int     @id @default(autoincrement())
-  sale_id    Int
-  product_id Int
-  quantity   Int
-  subtotal   Decimal @db.Decimal(10, 2)
-  product    stock   @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  sale       sales   @relation(fields: [sale_id], references: [id], onDelete: Cascade)
+model SaleItem {
+  id        Int     @id @default(autoincrement())
+  saleId    Int     @map("sale_id")
+  productId Int     @map("product_id")
+  quantity  Int
+  subtotal  Decimal @db.Decimal(10, 2)
 
-  @@index([product_id], map: "sale_items_product_id_fkey")
-  @@index([sale_id], map: "sale_items_sale_id_fkey")
+  sale    Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Stock  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([productId], map: "sale_items_product_id_fkey")
+  @@index([saleId], map: "sale_items_sale_id_fkey")
+  @@map("Sale_items")
 }
 
-model stock {
-  id                  Int          @id @default(autoincrement())
-  name                String       @db.VarChar(100)
-  price               Decimal      @db.Decimal(10, 2)
-  category            String       @db.VarChar(65)
+model Stock {
+  id                  Int      @id @default(autoincrement())
+  name                String   @db.VarChar(100)
+  price               Decimal  @db.Decimal(10, 2)
+  category            String   @db.VarChar(65)
   amount              Int
-  unit_of_measurement String
-  sales               sale_items[]
+  unitOfMeasurement   String   @map("unit_of_measurement")
+
+  sales    SaleItem[]
+  commands CommandItem[]
+
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @db.Timestamp(0)
 }
 
-model resetPasswordToken {
+model ResetPasswordToken {
   id          Int       @id @default(autoincrement())
   token       String    @unique
-  employee_id Int
-  employee    employees @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  employeeId  Int       @map("employee_id")
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
   expiresAt   DateTime
   used        Boolean   @default(false)
+
+  @@map("resetPasswordToken")
+}
+
+model Command {
+  id          Int             @id @default(autoincrement())
+  employeeId  Int             @map("employee_id")
+  status      CommandStatus   @default(OPEN)
+
+  employee    Employee        @relation(fields: [employeeId], references: [id])
+  items       CommandItem[]
+
+  createdAt DateTime @default(now()) @db.Timestamp(0)
+  updatedAt DateTime @default(now()) @db.Timestamp(0)
+
+  @@index([employeeId])
+  @@map("Command")
+}
+
+model CommandItem {
+  id         Int    @id @default(autoincrement())
+  commandId  Int    @map("command_id")
+  productId  Int    @map("product_id")
+  quantity   Int
+
+  command  Command @relation(fields: [commandId], references: [id])
+  product  Stock   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([commandId])
+  @@map("CommandItem")
 }
