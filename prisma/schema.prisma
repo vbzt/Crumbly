@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum CommandStatus {
+enum TabStatus {
   OPEN
   CLOSED
   CANCELLED
@@ -23,7 +23,7 @@ model Employee {
 
   sales    Sale[]
   resetTokens ResetPasswordToken[]
-  commands Command[]
+  Tabs Tab[]
 
   createdAt DateTime @default(now()) @db.Timestamp(0)
   updatedAt DateTime @default(now()) @db.Timestamp(0)
@@ -74,7 +74,7 @@ model Stock {
   unitOfMeasurement   String   @map("unit_of_measurement")
 
   sales    SaleItem[]
-  commands CommandItem[]
+  Tabs TabItem[]
 
   createdAt DateTime @default(now()) @db.Timestamp(0)
   updatedAt DateTime @default(now()) @db.Timestamp(0)
@@ -92,30 +92,30 @@ model ResetPasswordToken {
   @@map("resetPasswordToken")
 }
 
-model Command {
+model Tab {
   id          Int             @id @default(autoincrement())
   employeeId  Int             @map("employee_id")
-  status      CommandStatus   @default(OPEN)
+  status      TabStatus   @default(OPEN)
 
   employee    Employee        @relation(fields: [employeeId], references: [id])
-  items       CommandItem[]
+  items       TabItem[]
 
   createdAt DateTime @default(now()) @db.Timestamp(0)
   updatedAt DateTime @default(now()) @db.Timestamp(0)
 
   @@index([employeeId])
-  @@map("Command")
+  @@map("Tab")
 }
 
-model CommandItem {
+model TabItem {
   id         Int    @id @default(autoincrement())
-  commandId  Int    @map("command_id")
+  TabId  Int    @map("Tab_id")
   productId  Int    @map("product_id")
   quantity   Int
 
-  command  Command @relation(fields: [commandId], references: [id])
+  Tab  Tab @relation(fields: [TabId], references: [id])
   product  Stock   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@index([commandId])
-  @@map("CommandItem")
+  @@index([TabId])
+  @@map("TabItem")
 }
