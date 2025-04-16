@@ -55,7 +55,6 @@ export class SalesService {
       })
 
       const productQuantities: { [productId: number]: number } = {}
-
       for (const item of items) {
         if (productQuantities[item.product_id]) {
           productQuantities[item.product_id] += item.quantity
@@ -66,10 +65,10 @@ export class SalesService {
 
       for (const productId in productQuantities) {
         const quantity = productQuantities[productId]
-        const product = await this.getProduct(parseInt(productId), quantity)
+        const product = await this.getProduct (Number(productId), quantity)
         const amount = product.amount - quantity
         await trx.stock.update({
-          where: { id: parseInt(productId) },
+          where: { id: Number(productId) },
           data: { amount },
         })
       }

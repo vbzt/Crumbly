@@ -1,4 +1,3 @@
-import { ParseIntPipe } from "@nestjs/common";
 import { IsInt, IsNumber, IsPositive, Min } from "class-validator";
 
 export class SaleItemDTO{ 
