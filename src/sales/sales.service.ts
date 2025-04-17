@@ -34,6 +34,9 @@ export class SalesService {
   }
 
   async registerSale(saleData: RegisterSaleDTO, id: number) {
+
+    const tab = await this.getTab(saleData.tabId)
+
     if (saleData.saleItems.length === 0) {
       throw new BadRequestException("Cannot register an empty sale")
     }
@@ -42,8 +45,7 @@ export class SalesService {
 
     const registeredSale = await this.prismaService.$transaction(async (trx) => {
       const sale = await trx.sale.create({
-        data: { employeeId: id, totalPrice: totalSaleValue, totalItems: saleData.saleItems.length },
-      })
+        data: { employeeId: id, totalPrice: totalSaleValue, totalItems: saleData.saleItems.length, tabId: tab.id } ,})
 
       await trx.saleItem.createMany({
         data: items.map((item) => ({
@@ -166,4 +168,18 @@ export class SalesService {
       throw new BadRequestException("Solicited amount exceeds current stock")
     }
   }
+
+  getTab = async (tabId: number) => {
+    const tab = await this.prismaService.tab.findUnique({ where: { id: tabId } });
+  
+    if (!tab) throw new NotFoundException('Tab does not exist')
+  
+    if (tab.status !== 'CLOSED') throw new BadRequestException('Tab must be closed to be registered as a sale')
+  
+    const saleExists = await this.prismaService.sale.findUnique( { where: { tabId } } )
+    if (saleExists) throw new BadRequestException('A sale is already registered for this tab')
+  
+    return tab
+  }
+  
 }
