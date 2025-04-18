@@ -1,10 +1,10 @@
-import { Type } from "class-transformer";
-import { IsInt, Min } from "class-validator";
+  import { Type } from "class-transformer";
+  import { IsNumber, IsPositive } from "class-validator";
 
 
-export class UpdateSaleItemDTO {
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  quantity: number
-}
+  export class UpdateSaleItemDTO {
+    @Type(() => Number)
+    @IsNumber()
+    @IsPositive()
+    quantity: number
+  }

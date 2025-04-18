@@ -88,8 +88,9 @@ export class SalesService {
   async updateSaleItem({ quantity }: UpdateSaleItemDTO, id: number, itemId: number){
     const sale = await this.getSale(id)
     const saleItem = (await this.getSaleItem(sale!.id, itemId)).saleItem
-    const product = await this.getProduct(saleItem.productId, quantity)
+    const product = await this.getProduct(saleItem.productId, quantity) 
 
+    if(quantity === 0) return this.deleteSaleItem(id, itemId)
     const updatedProductStock = product.amount - ( quantity - saleItem.quantity )
     const updatedSaleItemSubtotal = product.price.toNumber() * quantity
     const updatedSaleTotalPrice = sale!.totalPrice.toNumber() - ( updatedSaleItemSubtotal - saleItem.subtotal.toNumber())
