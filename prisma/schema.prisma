@@ -14,16 +14,16 @@ enum TabStatus {
 }
 
 model Employee {
-  id       Int     @id @default(autoincrement())
-  name     String  @db.VarChar(65)
-  phone    String  @unique @db.VarChar(45)
-  email    String  @unique @db.VarChar(45)
-  role     String  @db.VarChar(45)
+  id       Int    @id @unique @default(autoincrement())
+  name     String @db.VarChar(65)
+  phone    String @unique @db.VarChar(45)
+  email    String @unique @db.VarChar(45)
+  role     String @db.VarChar(45)
   password String
 
-  sales    Sale[]
+  sales       Sale[]
   resetTokens ResetPasswordToken[]
-  Tabs Tab[]
+  Tabs        Tab[]
 
   createdAt DateTime @default(now()) @db.Timestamp(0)
   updatedAt DateTime @default(now()) @db.Timestamp(0)
@@ -32,13 +32,16 @@ model Employee {
 }
 
 model Sale {
-  id          Int     @id @default(autoincrement())
-  employeeId  Int     @map("employee_id")
-  totalPrice  Decimal @db.Decimal(10, 2) @map("total_price")
-  totalItems  Int     @map("total_items")
-  
-  saleItems   SaleItem[]
-  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  id         Int     @id @unique @default(autoincrement())
+  employeeId Int     @map("employee_id")
+  totalPrice Decimal @map("total_price") @db.Decimal(10, 2)
+  totalItems Int     @map("total_items")
+
+  tabId Int @unique
+  tab   Tab @relation("SaleToTab", fields: [tabId], references: [id])
+
+  saleItems SaleItem[]
+  employee  Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @db.Timestamp(0)
   updatedAt DateTime @default(now()) @db.Timestamp(0)
@@ -48,14 +51,14 @@ model Sale {
 }
 
 model SaleItem {
-  id        Int     @id @default(autoincrement())
+  id        Int     @id @unique @default(autoincrement())
   saleId    Int     @map("sale_id")
   productId Int     @map("product_id")
   quantity  Int
   subtotal  Decimal @db.Decimal(10, 2)
 
-  sale    Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  product Stock  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sale    Sale  @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Stock @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @db.Timestamp(0)
   updatedAt DateTime @default(now()) @db.Timestamp(0)
@@ -66,56 +69,58 @@ model SaleItem {
 }
 
 model Stock {
-  id                  Int      @id @default(autoincrement())
-  name                String   @db.VarChar(100)
-  price               Decimal  @db.Decimal(10, 2)
-  category            String   @db.VarChar(65)
-  amount              Int
-  unitOfMeasurement   String   @map("unit_of_measurement")
+  id                Int     @id @unique @default(autoincrement())
+  name              String  @db.VarChar(100)
+  price             Decimal @db.Decimal(10, 2)
+  category          String  @db.VarChar(65)
+  amount            Int
+  unitOfMeasurement String  @map("unit_of_measurement")
 
-  sales    SaleItem[]
-  Tabs TabItem[]
+  sales SaleItem[]
+  Tabs  TabItem[]
 
   createdAt DateTime @default(now()) @db.Timestamp(0)
   updatedAt DateTime @default(now()) @db.Timestamp(0)
 }
 
 model ResetPasswordToken {
-  id          Int       @id @default(autoincrement())
-  token       String    @unique
-  employeeId  Int       @map("employee_id")
-  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  expiresAt   DateTime
-  used        Boolean   @default(false)
+  id         Int      @id @unique @default(autoincrement())
+  token      String   @unique
+  employeeId Int      @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  used       Boolean  @default(false)
 
   @@map("resetPasswordToken")
 }
 
 model Tab {
-  id          Int             @id @default(autoincrement())
-  employeeId  Int             @map("employee_id")
-  status      TabStatus   @default(OPEN)
+  id         Int       @id @unique @default(autoincrement())
+  employeeId Int       @map("employee_id")
+  status     TabStatus @default(OPEN)
 
-  employee    Employee        @relation(fields: [employeeId], references: [id])
-  items       TabItem[]
+  employee Employee  @relation(fields: [employeeId], references: [id])
+  items    TabItem[]
+  sale     Sale?     @relation("SaleToTab")
 
   createdAt DateTime @default(now()) @db.Timestamp(0)
   updatedAt DateTime @default(now()) @db.Timestamp(0)
+  closedAt  DateTime? @db.Timestamp(0) 
 
   @@index([employeeId])
   @@map("Tab")
 }
 
 model TabItem {
-  id         Int    @id @default(autoincrement())
-  TabId  Int    @map("Tab_id")
-  productId  Int    @map("product_id")
-  quantity   Int
+  id        Int @id @unique @default(autoincrement())
+  tabId     Int @map("tab_id")
+  productId Int @map("product_id")
+  quantity  Int
 
-  Tab  Tab @relation(fields: [TabId], references: [id])
-  product  Stock   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  Tab     Tab   @relation(fields: [tabId], references: [id])
+  product Stock @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@index([TabId])
-  @@map("TabItem")
+  @@index([tabId])
+  @@map("tab_items")
 }
