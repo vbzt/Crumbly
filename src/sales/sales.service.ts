@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common"
 import { PrismaService } from "src/prisma/prisma.service"
-import { RegisterSaleDTO } from "./dto/register-sale.dto"
 import { UpdateSaleItemDTO } from "./dto/update-sale-item.dto"
 
 @Injectable()
@@ -33,58 +32,75 @@ export class SalesService {
     return { saleItem, item }
   }
 
-  async registerSale(saleData: RegisterSaleDTO, id: number) {
-
-    const tab = await this.getTab(saleData.tabId)
-
-    if (saleData.saleItems.length === 0) {
-      throw new BadRequestException("Cannot register an empty sale")
+  async registerSale(tabId: number, employeeId: number) {
+    const tab = await this.getTab(tabId);
+  
+    const tabItems = await this.prismaService.tabItem.findMany({
+      where: { tabId: tab.id },
+      select: {
+        productId: true,
+        quantity: true,
+        product: { select: { price: true, amount: true } }
+      }
+    });
+  
+    if (!tabItems.length) {
+      throw new BadRequestException("Cannot register an empty sale");
     }
-
-    const { items, totalSaleValue } = await this.validateItems(saleData)
-
-    const registeredSale = await this.prismaService.$transaction(async (trx) => {
+  
+    for (const item of tabItems) {
+      await this.hasStock(item.product, item.quantity.toNumber());
+    }
+  
+    const saleItems = tabItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      subtotal: item.product.price.toNumber() * item.quantity.toNumber(),
+    }));
+  
+    const totalSaleValue = saleItems.reduce((acc, item) => acc + item.subtotal, 0);
+  
+    const registeredSale = await this.prismaService.$transaction(async trx => {
       const sale = await trx.sale.create({
-        data: { employeeId: id, totalPrice: totalSaleValue, totalItems: saleData.saleItems.length, tabId: tab.id } ,})
-
+        data: {
+          employeeId,
+          totalPrice: totalSaleValue,
+          totalItems: saleItems.length,
+          tabId,
+        },
+      });
+  
       await trx.saleItem.createMany({
-        data: items.map((item) => ({
+        data: saleItems.map(item => ({
           saleId: sale.id,
-          productId: item.product_id,
-          quantity: item.quantity,
+          productId: item.productId,
+          quantity: item.quantity.toNumber(),
           subtotal: item.subtotal,
         })),
-      })
-
-      const productQuantities: { [productId: number]: number } = {}
-      for (const item of items) {
-        if (productQuantities[item.product_id]) {
-          productQuantities[item.product_id] += item.quantity
-        } else {
-          productQuantities[item.product_id] = item.quantity
-        }
-      }
-
-      for (const productId in productQuantities) {
-        const quantity = productQuantities[productId]
-        const product = await this.getProduct (Number(productId), quantity)
-        const amount = product.amount - quantity
+      });
+  
+      for (const item of saleItems) {
+        const product = await trx.stock.findUniqueOrThrow({
+          where: { id: item.productId },
+        });
+  
         await trx.stock.update({
-          where: { id: Number(productId) },
-          data: { amount },
-        })
+          where: { id: item.productId },
+          data: { amount: product.amount - item.quantity.toNumber() },
+        });
       }
-
-      return { sale, items }
-    })
-
+  
+      return { sale, saleItems };
+    });
+  
     return {
       message: "Sale registered successfully.",
       sale: registeredSale.sale,
-      saleItems: registeredSale.items,
-    }
+      saleItems: registeredSale.saleItems,
+    };
   }
-
+  
+  
   async updateSaleItem({ quantity }: UpdateSaleItemDTO, id: number, itemId: number){
     const sale = await this.getSale(id)
     const saleItem = (await this.getSaleItem(sale!.id, itemId)).saleItem
@@ -131,26 +147,6 @@ export class SalesService {
 
     return { deletedSaleItem, updatedSale, updatedStock}
   } 
-
-
-  validateItems = async (saleData: RegisterSaleDTO) => {
-    let totalSaleValue = 0
-    const items: { product_id: number; quantity: number; subtotal: number }[] = []
-  
-    for (const item of saleData.saleItems) {
-      const product = await this.getProduct(item.product_id, item.quantity)
-      const subtotal = item.quantity * product.price.toNumber()
-      totalSaleValue += subtotal
-  
-      items.push({
-        product_id: product.id,
-        quantity: item.quantity,
-        subtotal,
-      })
-    }
-  
-    return { items, totalSaleValue }
-  }
   
   getProduct = async (prodId: number, qnt: number) => {
     const product = await this.prismaService.stock.findFirst({ where: { id: prodId } })
