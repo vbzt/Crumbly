@@ -1,6 +1,13 @@
-import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { createParamDecorator, ExecutionContext, BadRequestException } from '@nestjs/common'
 
-  export const ParamId = createParamDecorator( (args: string, context: ExecutionContext) => {
-    if(!args) return Number( context.switchToHttp().getRequest().params.id)
-    return Number( context.switchToHttp().getRequest().params[args])
-  })
+export const ParamId = createParamDecorator((args: string, context: ExecutionContext) => {
+  const request = context.switchToHttp().getRequest()
+  const param = args ? request.params[args] : request.params.id
+  const parsedId = Number(param)
+
+  if (isNaN(parsedId) || parsedId < 1) {
+    throw new BadRequestException('Invalid ID')
+  }
+
+  return parsedId
+})
