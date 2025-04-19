@@ -116,7 +116,7 @@ model TabItem {
   id        Int @id @unique @default(autoincrement())
   tabId     Int @map("tab_id")
   productId Int @map("product_id")
-  quantity  Int
+  quantity  Decimal @db.Decimal(10, 2)
 
   Tab     Tab   @relation(fields: [tabId], references: [id])
   product Stock @relation(fields: [productId], references: [id], onDelete: Cascade)
