@@ -32,7 +32,7 @@ export class TabService {
   async getOpenTabs(){ 
     return this.prismaService.tab.findMany( { where: { status: 'OPEN' } } )
   }
-
+ 
   async closeTab(id: number){ 
     const timestamp = new Date()
 
