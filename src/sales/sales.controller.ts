@@ -1,6 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { SalesService } from "./sales.service";
-import { RegisterSaleDTO } from "./dto/register-sale.dto";
 import { AuthGuard } from "src/guards/auth.guard";
 import { Employee } from "src/decorators/employee.decorator";
 import { ParamId } from "src/decorators/param.id.decorator";
@@ -37,8 +36,8 @@ export class SalesController{
   }
 
   @Post('')
-  async registerSale(@Body() saleData: RegisterSaleDTO, @Employee('id') id: number){  
-    return this.salesService.registerSale( saleData, id )
+  async registerSale(@Body() { tabId }, @Employee('id') id: number){  
+    return this.salesService.registerSale( tabId, id )
   }
 
   @Patch('/:id/items/:itemId')
