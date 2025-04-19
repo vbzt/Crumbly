@@ -1,4 +1,4 @@
-import { IsInt, IsNumber, IsPositive } from "class-validator";
+import { IsInt, IsNumber, IsPositive, Min } from "class-validator";
 
 
 export class AddTabItemDTO{
@@ -7,6 +7,6 @@ export class AddTabItemDTO{
   productId: number
 
   @IsNumber({  allowNaN: false, allowInfinity: false })
-  @IsPositive()
+  @Min(0.01)
   quantity: number
 }

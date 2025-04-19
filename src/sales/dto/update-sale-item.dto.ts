@@ -1,10 +1,10 @@
   import { Type } from "class-transformer";
-  import { IsNumber, IsPositive } from "class-validator";
+  import {IsNumber, Min } from "class-validator";
 
 
   export class UpdateSaleItemDTO {
     @Type(() => Number)
     @IsNumber()
-    @IsPositive()
+    @Min(0)
     quantity: number
   }

@@ -16,6 +16,11 @@ export class TabController {
   async showTabs() { 
     return this.tabService.showTabs()
   }
+  
+  @Get('/open')
+  async getOpenTabs(){ 
+    return this.tabService.getOpenTabs()
+  }
 
   @Get('/:id')
   async getTab(@ParamId() id: number ){
@@ -27,10 +32,7 @@ export class TabController {
     return this.tabService.getTabItems(id)
   }
 
-  @Get('/open')
-  async getOpenTabs(){ 
-    return this.tabService.getOpenTabs()
-  }
+
 
   @Post('/')
   async openTab(@Employee('id') employeeId: number){ 

@@ -56,10 +56,15 @@ export class TabService {
     const tab = await this.validateTab(tabId)
     if (tab.status !== 'OPEN') throw new BadRequestException('Cannot add items to closed/cancelled tab')
     await this.validateItem(productId) 
+  
     
     const repeatedItem = await this.prismaService.tabItem.findFirst( { where: { tabId, productId } } )
-    if( repeatedItem ) return this.prismaService.tabItem.update( { where: { id: repeatedItem.id  }, data: { quantity: { increment: quantity } } } )
-    return this.prismaService.tabItem.create( { data: { tabId, productId, quantity } } )
+    if( repeatedItem ){
+      const updatedItem = await this.prismaService.tabItem.update( { where: { id: repeatedItem.id }, data: { quantity: repeatedItem.quantity.toNumber() + quantity } } )
+      return { updatedItem, tab }
+    }
+    const newItem = await this.prismaService.tabItem.create( { data: { tabId, productId, quantity } } )
+    return { newItem, tab }
   }
 
   async editTabItem(tabId:number, { productId, quantity }: EditTabItemDTO){ 
@@ -69,9 +74,15 @@ export class TabService {
     const tabItem = await this.prismaService.tabItem.findFirst( { where: { tabId, productId } } )
     if(!tabItem) throw new NotFoundException('Product is not registered in current tab')
 
-    if(quantity === 0) return this.removeTabItem(tabId, productId)
 
-    return this.prismaService.tabItem.update( { where: { id: tabItem.id }, data: { quantity } } )
+    const tabItems = await this.prismaService.tabItem.findMany( { where: { tabId } } )
+    if(quantity === 0){
+      const removedItem = await this.removeTabItem(tabId, productId)
+      return { message: 'Item removed', removedItem , tabItems }
+    }
+
+    const updatedItem = await this.prismaService.tabItem.update( { where: { id: tabItem.id }, data: { quantity } } )
+    return { message: 'Item updated', updatedItem, tabItems }
 
   }
 
@@ -79,8 +90,10 @@ export class TabService {
     const tab = await this.validateTab(tabId)
     if (tab.status !== 'OPEN') throw new BadRequestException('Cannot remove items from closed/cancelled tab')
     const tabItem = await this.prismaService.tabItem.findFirst( { where: { tabId, productId } } )
-    if(!tabItem) throw new NotFoundException('Product is not registered in current tab')
-    return this.prismaService.tabItem.delete( { where: { id: tabItem.id } } )
+    if(!tabItem) throw new NotFoundException('Product is not registered in current tab') 
+
+    const updatedTabItems = await this.prismaService.tabItem.findMany( { where: { tabId } } )
+    return { deletedItem: await this.prismaService.tabItem.delete( { where: { id: tabItem.id } } ), updatedTabItems }
   }   
 
 
