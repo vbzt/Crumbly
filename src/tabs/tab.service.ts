@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
-import { CancelTabDTO } from "./dto/cancel-tab.dto";
-import { AddTabItemDTO } from "./dto/add-tab-item.dto";
-import { EditTabItemDTO } from "./dto/edit-tab-item.dto";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common"
+import { PrismaService } from "src/prisma/prisma.service"
+import { CancelTabDTO } from "./dto/cancel-tab.dto"
+import { AddTabItemDTO } from "./dto/add-tab-item.dto"
+import { EditTabItemDTO } from "./dto/edit-tab-item.dto"
 
 
 @Injectable()
@@ -15,7 +15,13 @@ export class TabService {
   }
 
   async getTab(id:number){ 
-    return this.prismaService.tab.findUnique( { where:  { id } } )
+    const tab = await this.validateTab(id)
+    return tab
+  }
+
+  async getTabItems(id: number){ 
+    const tab = await this.validateTab(id)
+    return this.prismaService.tabItem.findMany( { where: { tabId: tab.id } } )
   }
 
   async openTab(id: number){ 
@@ -30,9 +36,9 @@ export class TabService {
   async closeTab(id: number){ 
     const timestamp = new Date()
 
-    const tab = await this.prismaService.tab.update( { where: { id }, data: { status: 'CLOSED', closedAt: timestamp } } )
-  
-    return tab
+    const closedTab = await this.prismaService.tab.update( { where: { id }, data: { status: 'CLOSED', closedAt: timestamp } } )
+    const tabItems = await this.prismaService.tabItem.findMany( { where: { tabId: id }, select: { productId: true, quantity: true}} )
+    return { tab: closedTab, tabItems}
   }
 
   async cancelTab(id: number, { deleteTabItems }: CancelTabDTO){
@@ -42,8 +48,8 @@ export class TabService {
     if(deleteTabItems) await this.prismaService.tabItem.deleteMany( { where: { tabId: id } } )  
 
     const timestamp = new Date()
-    const closedTab = await this.prismaService.tab.update( { where: { id }, data: { status: 'CANCELLED', closedAt: timestamp } } )
-    return closedTab
+    const cancelledTab = await this.prismaService.tab.update( { where: { id }, data: { status: 'CANCELLED', closedAt: timestamp } } )
+    return cancelledTab
   }
 
   async addTabItem(tabId: number, { productId, quantity }: AddTabItemDTO ){
@@ -60,6 +66,13 @@ export class TabService {
     const tab = await this.validateTab(tabId)
     if (tab.status !== 'OPEN') throw new BadRequestException('Cannot edit items from closed/cancelled tab')
 
+    const tabItem = await this.prismaService.tabItem.findFirst( { where: { tabId, productId } } )
+    if(!tabItem) throw new NotFoundException('Product is not registered in current tab')
+
+    if(quantity === 0) return this.removeTabItem(tabId, productId)
+
+    return this.prismaService.tabItem.update( { where: { id: tabItem.id }, data: { quantity } } )
+
   }
 
   async removeTabItem(tabId: number, productId: number){
@@ -68,17 +81,17 @@ export class TabService {
     const tabItem = await this.prismaService.tabItem.findFirst( { where: { tabId, productId } } )
     if(!tabItem) throw new NotFoundException('Product is not registered in current tab')
     return this.prismaService.tabItem.delete( { where: { id: tabItem.id } } )
-  } 
+  }   
 
 
   validateTab = async (tabId: number) => {
-    const tab = await this.prismaService.tab.findUnique({ where: { id: tabId } });
+    const tab = await this.prismaService.tab.findUnique({ where: { id: tabId } })
     if (!tab) throw new NotFoundException('Tab does not exist')  
     return tab
   }
 
   validateItem = async (productId: number) => { 
-    const item = await this.prismaService.stock.findUnique({ where: { id: productId } });
+    const item = await this.prismaService.stock.findUnique({ where: { id: productId } })
     if(!item) throw new NotFoundException('Product does not exist')
     return item 
   }

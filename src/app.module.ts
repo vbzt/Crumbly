@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import * as path from 'path';
 import { SalesModule } from './sales/sales.module'
 import { ResendModule } from 'nest-resend';
+import { TabModule } from './tabs/tab.module';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 if (!resendApiKey) {
@@ -22,7 +23,8 @@ if (!resendApiKey) {
     AuthModule,
     EmployeeModule,
     StockModule,
-    SalesModule
+    SalesModule,
+    TabModule,
   ],
 })
 
