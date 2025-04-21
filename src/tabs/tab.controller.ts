@@ -50,12 +50,12 @@ export class TabController {
   }
 
   @Patch('/close/:id')
-  async closeTab(@ParamId() id: number){ 
-    return this.tabService.closeTab(id)
+  async closeTab(@ParamId() id: number, @Employee('id') employeeId:number){ 
+    return this.tabService.closeTab(id, employeeId)
   }
 
   @Patch('/cancel/:id')
-  async cancelTab(@ParamId() id: number, @Body() deleteTabItems: CancelTabDTO){
-    return this.tabService.cancelTab(id, deleteTabItems)
+  async cancelTab(@ParamId() id: number, @Body() deleteTabItems: CancelTabDTO, @Employee('id') employeeId:number){
+    return this.tabService.cancelTab(id, deleteTabItems, employeeId)
   }
 }

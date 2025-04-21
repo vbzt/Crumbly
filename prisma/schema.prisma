@@ -23,7 +23,8 @@ model Employee {
 
   sales       Sale[]
   resetTokens ResetPasswordToken[]
-  Tabs        Tab[]
+  openedTabs  Tab[] @relation("EmployeeOpenedTabs")
+  closedTabs  Tab[] @relation("EmployeeClosedTabs")
 
   createdAt DateTime @default(now()) @db.Timestamp(0)
   updatedAt DateTime @default(now()) @db.Timestamp(0)
@@ -100,7 +101,10 @@ model Tab {
   employeeId Int       @map("employee_id")
   status     TabStatus @default(OPEN)
 
-  employee Employee  @relation(fields: [employeeId], references: [id])
+  employee   Employee  @relation("EmployeeOpenedTabs", fields: [employeeId], references: [id])
+  closedById Int?      @map("closed_by")
+  closedBy   Employee? @relation("EmployeeClosedTabs", fields: [closedById], references: [id], onDelete: Cascade)
+
   items    TabItem[]
   sale     Sale?     @relation("SaleToTab")
 
@@ -111,6 +115,7 @@ model Tab {
   @@index([employeeId])
   @@map("Tab")
 }
+
 
 model TabItem {
   id        Int @id @unique @default(autoincrement())

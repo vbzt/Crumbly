@@ -30,25 +30,27 @@ export class TabService {
   }
 
   async getOpenTabs(){ 
-    return this.prismaService.tab.findMany( { where: { status: 'OPEN' } } )
+    const tabs =  await this.prismaService.tab.findMany( { where: { status: 'OPEN' } } )
+    if(!tabs || tabs.length === 0) return { message: 'There are no open tabs', tabs}
+    return tabs
   }
  
-  async closeTab(id: number){ 
+  async closeTab(id: number, employeeId: number){ 
     const timestamp = new Date()
 
-    const closedTab = await this.prismaService.tab.update( { where: { id }, data: { status: 'CLOSED', closedAt: timestamp } } )
+    const closedTab = await this.prismaService.tab.update( { where: { id }, data: { status: 'CLOSED', closedAt: timestamp, closedById: employeeId } } )
     const tabItems = await this.prismaService.tabItem.findMany( { where: { tabId: id }, select: { productId: true, quantity: true}} )
     return { tab: closedTab, tabItems}
   }
 
-  async cancelTab(id: number, { deleteTabItems }: CancelTabDTO){
+  async cancelTab(id: number, { deleteTabItems }: CancelTabDTO, employeeId: number){
     const tab  = await this.validateTab(id)
     
     if (tab.status !== 'OPEN') throw new BadRequestException('Tab is not open')
     if(deleteTabItems) await this.prismaService.tabItem.deleteMany( { where: { tabId: id } } )  
 
     const timestamp = new Date()
-    const cancelledTab = await this.prismaService.tab.update( { where: { id }, data: { status: 'CANCELLED', closedAt: timestamp } } )
+    const cancelledTab = await this.prismaService.tab.update( { where: { id }, data: { status: 'CANCELLED', closedAt: timestamp, closedById: employeeId } } )
     return cancelledTab
   }
 
@@ -89,6 +91,7 @@ export class TabService {
   async removeTabItem(tabId: number, productId: number){
     const tab = await this.validateTab(tabId)
     if (tab.status !== 'OPEN') throw new BadRequestException('Cannot remove items from closed/cancelled tab')
+      
     const tabItem = await this.prismaService.tabItem.findFirst( { where: { tabId, productId } } )
     if(!tabItem) throw new NotFoundException('Product is not registered in current tab') 
 
