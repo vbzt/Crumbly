@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { TabService } from "./tab.service";
 import { ParamId } from "src/decorators/param.id.decorator";
 import { Employee } from "src/decorators/employee.decorator";
@@ -6,6 +6,7 @@ import { CancelTabDTO } from "./dto/cancel-tab.dto";
 import { AddTabItemDTO } from "./dto/add-tab-item.dto";
 import { EditTabItemDTO } from "./dto/edit-tab-item.dto";
 import { AuthGuard } from "src/guards/auth.guard";
+import { TabQueryStatusDTO } from "./dto/tab-query-status.dto";
 
 @UseGuards(AuthGuard)
 @Controller('tabs')
@@ -13,13 +14,8 @@ export class TabController {
   constructor ( private readonly tabService: TabService) {}
 
   @Get()
-  async showTabs() { 
-    return this.tabService.showTabs()
-  }
-  
-  @Get('/open')
-  async getOpenTabs(){ 
-    return this.tabService.getOpenTabs()
+  async showTabs(@Query() query: TabQueryStatusDTO) {
+    return this.tabService.showTabs(query)
   }
 
   @Get('/:id')
@@ -31,8 +27,6 @@ export class TabController {
   async getTabItems(@ParamId() id: number){
     return this.tabService.getTabItems(id)
   }
-
-
 
   @Post('/')
   async openTab(@Employee('id') employeeId: number){ 

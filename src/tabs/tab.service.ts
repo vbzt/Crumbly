@@ -3,6 +3,7 @@ import { PrismaService } from "src/prisma/prisma.service"
 import { CancelTabDTO } from "./dto/cancel-tab.dto"
 import { AddTabItemDTO } from "./dto/add-tab-item.dto"
 import { EditTabItemDTO } from "./dto/edit-tab-item.dto"
+import { TabQueryStatusDTO } from "./dto/tab-query-status.dto"
 
 
 @Injectable()
@@ -10,8 +11,16 @@ export class TabService {
 
   constructor ( private readonly prismaService: PrismaService) {}
 
-  async showTabs() { 
-    return this.prismaService.tab.findMany()
+  async showTabs(query : TabQueryStatusDTO) {
+    
+    if(query.status){
+      const filteredTabs = await this.prismaService.tab.findMany( { where: { status: query.status } } )
+      if(!filteredTabs || filteredTabs.length === 0) return { message: `There are no ${query.status.toLowerCase()} tabs`, filteredTabs}
+
+    }
+    const tabs = await this.prismaService.tab.findMany()
+    if(!tabs || tabs.length === 0) return { message: 'There are no registered tabs', tabs}
+    return tabs
   }
 
   async getTab(id:number){ 
@@ -29,12 +38,6 @@ export class TabService {
     return tab
   }
 
-  async getOpenTabs(){ 
-    const tabs =  await this.prismaService.tab.findMany( { where: { status: 'OPEN' } } )
-    if(!tabs || tabs.length === 0) return { message: 'There are no open tabs', tabs}
-    return tabs
-  }
- 
   async closeTab(id: number, employeeId: number){ 
     const timestamp = new Date()
 
