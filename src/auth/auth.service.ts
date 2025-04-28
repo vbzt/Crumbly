@@ -61,7 +61,8 @@ export class AuthService {
     if(data.password !== data.confirmPassword) throw new BadRequestException('Passwords must match.')
     const { confirmPassword, ...employeeData} = data
     const employee = await this.employeeService.createEmployee(employeeData)
-    return this.createToken(employee)
+    const token = await this.createToken(employee)
+    return { ...token, message: "Employee registered successfully" }
     
   }
 
@@ -72,7 +73,8 @@ export class AuthService {
     const comparedPassword = await bcrypt.compare(data.password, employee.password)
     if(!comparedPassword) throw new UnauthorizedException('Incorrect email or password.') 
 
-    return this.createToken(employee)
+    const token = await this.createToken(employee)
+    return { ...token, message: "Login successful" }
   }
 
   async forgotPassword(data: AuthForgotDTO){
