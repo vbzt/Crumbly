@@ -7,6 +7,7 @@ import { UpdateSaleItemDTO } from "./dto/update-sale-item.dto";
 import { RoleGuard } from "src/guards/role.guard";
 import { Roles } from "src/decorators/roles.decorator";
 import { Role } from "src/enum/role.enum";
+import { RegisterSaleDTO } from "./dto/register-sale.dto";
 
 @UseGuards(AuthGuard, RoleGuard)
 @Roles(Role.Cashier, Role.Manager)
@@ -36,8 +37,8 @@ export class SalesController{
   }
 
   @Post('')
-  async registerSale(@Body() { tabId }, @Employee('id') id: number){  
-    return this.salesService.registerSale( tabId, id )
+  async registerSale(@Body() body: RegisterSaleDTO, @Employee('id') id: number){  
+    return this.salesService.registerSale( body, id )
   }
 
   @Patch('/:id/items/:itemId')

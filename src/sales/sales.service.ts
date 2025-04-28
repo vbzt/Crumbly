@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common"
 import { PrismaService } from "src/prisma/prisma.service"
 import { UpdateSaleItemDTO } from "./dto/update-sale-item.dto"
+import { RegisterSaleDTO } from "./dto/register-sale.dto"
 
 @Injectable()
 export class SalesService {
@@ -32,7 +33,7 @@ export class SalesService {
     return { saleItem, item }
   }
 
-  async registerSale(tabId: number, employeeId: number) {
+  async registerSale({ tabId }: RegisterSaleDTO, employeeId: number) {
     const tab = await this.getTab(tabId);
   
     const tabItems = await this.prismaService.tabItem.findMany({
@@ -109,7 +110,7 @@ export class SalesService {
     if(quantity === 0) return this.deleteSaleItem(id, itemId)
     const updatedProductStock = product.amount - ( quantity - saleItem.quantity )
     const updatedSaleItemSubtotal = product.price.toNumber() * quantity
-    const updatedSaleTotalPrice = sale!.totalPrice.toNumber() - ( updatedSaleItemSubtotal - saleItem.subtotal.toNumber())
+    const updatedSaleTotalPrice = sale.totalPrice.toNumber() - ( saleItem.subtotal.toNumber() - updatedSaleItemSubtotal ) 
 
     const updatedStock = await this.prismaService.stock.update( { data: { amount: updatedProductStock }, where: { id: saleItem.productId } } )
     const updatedSaleItem = await this.prismaService.saleItem.update( { data: { subtotal: updatedSaleItemSubtotal, quantity }, where: { id: saleItem.id } })
