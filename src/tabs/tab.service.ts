@@ -46,11 +46,11 @@ export class TabService {
     return { tab: closedTab, tabItems}
   }
 
-  async cancelTab(id: number, { deleteTabItems }: CancelTabDTO, employeeId: number){
+  async cancelTab(id: number, query: CancelTabDTO, employeeId: number){
     const tab  = await this.validateTab(id)
     
     if (tab.status !== 'OPEN') throw new BadRequestException('Tab is not open')
-    if(deleteTabItems) await this.prismaService.tabItem.deleteMany( { where: { tabId: id } } )  
+    if(query.deleteTabItems) await this.prismaService.tabItem.deleteMany( { where: { tabId: id } } )  
 
     const timestamp = new Date()
     const cancelledTab = await this.prismaService.tab.update( { where: { id }, data: { status: 'CANCELLED', closedAt: timestamp, closedById: employeeId } } )

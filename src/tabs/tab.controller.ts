@@ -49,7 +49,7 @@ export class TabController {
   }
 
   @Patch('/cancel/:id')
-  async cancelTab(@ParamId() id: number, @Body() deleteTabItems: CancelTabDTO, @Employee('id') employeeId:number){
-    return this.tabService.cancelTab(id, deleteTabItems, employeeId)
+  async cancelTab(@ParamId() id: number, @Query() query: CancelTabDTO, @Employee('id') employeeId:number){
+    return this.tabService.cancelTab(id, query, employeeId)
   }
 }
